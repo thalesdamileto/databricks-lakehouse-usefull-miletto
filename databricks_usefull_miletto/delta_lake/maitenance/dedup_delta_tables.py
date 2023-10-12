@@ -15,12 +15,12 @@ location
 
 ######################## FIELD 2 ########################
 ## COUNT TABLE DUPLCIATED ROWS
-dfTemp = (
+df_temp = (
     spark.sql(
         f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
 ).filter("rn > 1").drop('rn').distinct()
 
-print(f"Current duplciated rows: {dfTemp.count()}")
+print(f"Current duplciated rows: {df_temp.count()}")
 
 
 ########################  FIELD 3 ########################
@@ -47,24 +47,24 @@ final_condition = build_condition_match(pk_columns)
 from delta.tables import *
 
 # Step 1
-dfTemp = (
+df_temp = (
     spark.sql(
         f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
 ).filter("rn > 1").drop('rn').distinct()
 
-print(f"Duplcaited rows: {dfTemp.count()}")
+print(f"Duplcaited rows: {df_temp.count()}")
 
 # Step 2
-deltaTemp = DeltaTable.forPath(spark, f"{location}")
-deltaTemp.alias("main").merge(dfTemp.alias("nodups"), f"{final_condition}").whenMatchedDelete().execute()
+delta_temp = DeltaTable.forPath(spark, f"{location}")
+delta_temp.alias("main").merge(df_temp.alias("nodups"), f"{final_condition}").whenMatchedDelete().execute()
 
 # Step 3
 history_table = spark.sql(f"describe HISTORY delta.`{location}`")
-version = history_table.collect()[10]['version']
+version = history_table.collect()[1]['version']
 version
 
 # Step 4
-dfTemp2 = (
+df_temp2 = (
     spark.sql(
         f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}` VERSION AS OF {version}")
 ).filter("rn> 1").drop('rn').distinct()
@@ -72,9 +72,9 @@ dfTemp2 = (
 print(f"Number of rows to be reinserted: {dfTemp2.count()}")
 
 # Step 5
-deltaTemp = DeltaTable.forPath(spark, f"{location}")
+delta_temp = DeltaTable.forPath(spark, f"{location}")
 
-deltaTemp.alias("main").merge(dfTemp2.alias("nodups"), f"{final_condition}").whenNotMatchedInsertAll().execute()
+delta_temp.alias("main").merge(df_temp2.alias("nodups"), f"{final_condition}").whenNotMatchedInsertAll().execute()
 
 ######################## FIELD 5 ########################
 ## CHECK TABLE DUPLICATED ROWS
