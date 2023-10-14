@@ -3,22 +3,28 @@
 
 
 ######################## FIELD 1 ########################
-catalog = '<catalog-name>'
-schema = '<schema-name>'
-table = '<table-name>'
-full_table = f'{catalog}.{schema}.{table}'
-pk_columns = 'number_id,key'
-order_by_column = 'write_date_utc'
+catalog = "<catalog-name>"
+schema = "<schema-name>"
+table = "<table-name>"
+full_table = f"{catalog}.{schema}.{table}"
+pk_columns = "number_id,key"
+order_by_column = "write_date_utc"
 detail_table = spark.sql(f"describe detail {full_table}")
-location = detail_table.collect()[0]['location']
+location = detail_table.collect()[0]["location"]
 location
 
 ######################## FIELD 2 ########################
 ## COUNT TABLE DUPLCIATED ROWS
 dfTemp = (
-    spark.sql(
-        f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
-).filter("rn > 1").drop('rn').distinct()
+    (
+        spark.sql(
+            f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`"
+        )
+    )
+    .filter("rn > 1")
+    .drop("rn")
+    .distinct()
+)
 
 print(f"Current duplciated rows: {dfTemp.count()}")
 
@@ -48,9 +54,15 @@ from delta.tables import *
 
 # Step 1
 dfTemp = (
-    spark.sql(
-        f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
-).filter("rn > 1").drop('rn').distinct()
+    (
+        spark.sql(
+            f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`"
+        )
+    )
+    .filter("rn > 1")
+    .drop("rn")
+    .distinct()
+)
 
 print(f"Duplcaited rows: {dfTemp.count()}")
 
@@ -60,14 +72,20 @@ deltaTemp.alias("main").merge(dfTemp.alias("nodups"), f"{final_condition}").when
 
 # Step 3
 history_table = spark.sql(f"describe HISTORY delta.`{location}`")
-version = history_table.collect()[10]['version']
+version = history_table.collect()[10]["version"]
 version
 
 # Step 4
 dfTemp2 = (
-    spark.sql(
-        f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}` VERSION AS OF {version}")
-).filter("rn> 1").drop('rn').distinct()
+    (
+        spark.sql(
+            f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}` VERSION AS OF {version}"
+        )
+    )
+    .filter("rn> 1")
+    .drop("rn")
+    .distinct()
+)
 
 print(f"Number of rows to be reinserted: {dfTemp2.count()}")
 
@@ -79,9 +97,14 @@ deltaTemp.alias("main").merge(dfTemp2.alias("nodups"), f"{final_condition}").whe
 ######################## FIELD 5 ########################
 ## CHECK TABLE DUPLICATED ROWS
 dfTemp = (
-    spark.sql(
-        f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
-).filter("rn > 1").drop('rn').distinct()
+    (
+        spark.sql(
+            f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`"
+        )
+    )
+    .filter("rn > 1")
+    .drop("rn")
+    .distinct()
+)
 
 print(f"Total of duplicated rows after the process: {dfTemp.count()}")
-
