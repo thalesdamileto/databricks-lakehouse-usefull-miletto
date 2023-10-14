@@ -27,20 +27,24 @@ from pyspark.sql.functions import col, lit
 
 # Note:  Be aware you are not zordering anything!
 
+
 def reorgTables(catalog, schema):
     ## Note : if you are sadly not using UC, use this dataframe definition instead ##
     if catalogType == "LEGACY":
-        df = spark.sql(f"show tables from {catalog}.{schema}").select(col("tableName").alias("table_name"),
-                                                                      lit(schema).alias("table_schema"),
-                                                                      lit(catalog).alias("table_catalog"))
+        df = spark.sql(f"show tables from {catalog}.{schema}").select(
+            col("tableName").alias("table_name"), lit(schema).alias("table_schema"), lit(catalog).alias("table_catalog")
+        )
     else:
-        df = (spark.table("system.information_schema.tables").
-              select("table_catalog", "table_schema", "table_name")
-              .where(
-            f'(table_catalog = "{catalog}" or "{catalog}"="*") and (table_schema = "{schema}" or "{schema}"= "*")')
-              .where("data_source_format = 'DELTA'")
-              .where("table_catalog <> '__databricks_internal'")
-              .orderBy("table_schema"))
+        df = (
+            spark.table("system.information_schema.tables")
+            .select("table_catalog", "table_schema", "table_name")
+            .where(
+                f'(table_catalog = "{catalog}" or "{catalog}"="*") and (table_schema = "{schema}" or "{schema}"= "*")'
+            )
+            .where("data_source_format = 'DELTA'")
+            .where("table_catalog <> '__databricks_internal'")
+            .orderBy("table_schema")
+        )
 
     tableList = [data for data in df.select(col("table_catalog"), col("table_schema"), col("table_name")).collect()]
     tam_lista = len(tableList)
