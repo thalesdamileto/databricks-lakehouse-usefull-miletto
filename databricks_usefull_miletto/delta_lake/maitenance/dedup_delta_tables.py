@@ -78,10 +78,10 @@ delta_temp.alias("main").merge(df_temp2.alias("nodups"), f"{final_condition}").w
 
 ######################## FIELD 5 ########################
 ## CHECK TABLE DUPLICATED ROWS
-dfTemp = (
+df_temp = (
     spark.sql(
         f"SELECT *, ROW_NUMBER() OVER (PARTITION BY {pk_columns} ORDER BY {order_by_column} DESC) rn FROM delta.`{location}`")
 ).filter("rn > 1").drop('rn').distinct()
 
-print(f"Total of duplicated rows after the process: {dfTemp.count()}")
+print(f"Total of duplicated rows after the process: {df_temp.count()}")
 
