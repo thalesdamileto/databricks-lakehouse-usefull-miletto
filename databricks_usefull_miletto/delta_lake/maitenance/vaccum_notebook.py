@@ -1,7 +1,7 @@
 ## Objective  Notebook to be used as optimization and vaccum process
 ## Use in workflows with parameters Catalog and Schema
 ## Use * on catalog or schema if you want to processo for all schemas within your catalog ("*" only works with UC)
-## Author Ricardo Conegliam - Modified and adapted by Thales Morais
+## Modified and adapted by Thales Morais based on Ricardo Conegliam notebook
 
 
 
